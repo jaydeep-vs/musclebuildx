@@ -1,0 +1,126 @@
+{% doc %}
+  @prompt
+    Create an Influencers collection-style grid for the checktest page (not a product collection). Automatically load all storefront-accessible entries of the Influencers metaobject type influencers, rather than requiring manually selected entries or copied text. Each card should display the entry's name field (key name) and description field (key description). Use a responsive grid consistent with the current theme. Include pagination if needed so the full list can be browsed. Changes to entries and newly added storefront-accessible entries should be reflected automatically. Keep this block on the checktest page template only, without altering other pages., you have added grid but i wanted collection so when i create one section then i can select that collection of influencers, here it is still problem i want to loadd entries of metaobject here not select when i select metaobject in collection then all should come, im saying theat when i select collection then dynamically it should load but here i can change the meatobject i want give setting to choose metaobject so whatever i choose it will connect with that
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+{% assign selected_type = block.settings.metaobject_type_handle | strip %}
+{% assign entry_collection = metaobjects[selected_type] %}
+{% assign influencer_entries = entry_collection.values %}
+
+{% style %}
+  .ai-metaobject-list-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    color: #121212;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+  .ai-metaobject-list-{{ ai_gen_id }}__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .ai-metaobject-list-{{ ai_gen_id }}__card {
+    min-width: 0;
+    padding: 24px;
+    background: #fafaf9;
+    border: 1px solid rgba(18, 18, 18, 0.12);
+    border-radius: 4px;
+  }
+  .ai-metaobject-list-{{ ai_gen_id }}__name {
+    margin: 0 0 10px;
+    color: #121212;
+    font-size: 20px;
+    line-height: 1.25;
+    font-weight: 700;
+  }
+  .ai-metaobject-list-{{ ai_gen_id }}__description {
+    color: #121212;
+    font-size: 16px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .ai-metaobject-list-{{ ai_gen_id }}__description p { margin: 0 0 0.75em; }
+  .ai-metaobject-list-{{ ai_gen_id }}__description p:last-child { margin-bottom: 0; }
+  .ai-metaobject-list-{{ ai_gen_id }}__empty {
+    margin: 0;
+    color: #333333;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .ai-metaobject-list-{{ ai_gen_id }}__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 24px;
+    font-size: 15px;
+  }
+  .ai-metaobject-list-{{ ai_gen_id }}__pagination a { color: #121212; text-underline-offset: 3px; }
+  .ai-metaobject-list-{{ ai_gen_id }}__pagination a:focus-visible { outline: 2px solid #121212; outline-offset: 4px; }
+  @media screen and (max-width: 749px) {
+    .ai-metaobject-list-{{ ai_gen_id }}__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .ai-metaobject-list-{{ ai_gen_id }}__card { padding: 18px; }
+  }
+  @media screen and (max-width: 480px) {
+    .ai-metaobject-list-{{ ai_gen_id }}__grid { grid-template-columns: 1fr; }
+  }
+{% endstyle %}
+
+<div class="ai-metaobject-list-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  {% if entry_collection != blank %}
+    {% paginate influencer_entries by 12 %}
+      {% if paginate.items > 0 %}
+        <div class="ai-metaobject-list-{{ ai_gen_id }}__grid">
+          {% for entry in influencer_entries %}
+            {% assign entry_name = entry.name.value %}
+            {% assign entry_description = entry.description.value %}
+            <article class="ai-metaobject-list-{{ ai_gen_id }}__card">
+              {% if entry_name != blank %}<h2 class="ai-metaobject-list-{{ ai_gen_id }}__name">{{ entry_name | escape }}</h2>{% endif %}
+              {% if entry_description != blank %}<div class="ai-metaobject-list-{{ ai_gen_id }}__description">{{ entry_description | metafield_tag }}</div>{% endif %}
+            </article>
+          {% endfor %}
+        </div>
+        {% if paginate.pages > 1 %}
+          <nav class="ai-metaobject-list-{{ ai_gen_id }}__pagination" aria-label="Entries pages">
+            {% if paginate.previous %}<a href="{{ paginate.previous.url }}" aria-label="Previous page">Previous</a>{% endif %}
+            <span aria-current="page">Page {{ paginate.current_page }} of {{ paginate.pages }}</span>
+            {% if paginate.next %}<a href="{{ paginate.next.url }}" aria-label="Next page">Next</a>{% endif %}
+          </nav>
+        {% endif %}
+      {% else %}
+        <p class="ai-metaobject-list-{{ ai_gen_id }}__empty">No storefront-accessible entries found for this metaobject type.</p>
+      {% endif %}
+    {% endpaginate %}
+  {% else %}
+    <p class="ai-metaobject-list-{{ ai_gen_id }}__empty">Enter a valid metaobject type handle in this block's settings.</p>
+  {% endif %}
+</div>
+
+{% schema %}
+{
+  "name": "Metaobject entries grid",
+  "settings": [
+    {
+      "type": "text",
+      "id": "metaobject_type_handle",
+      "label": "Metaobject type handle",
+      "default": "influencers",
+      "info": "Enter the definition handle, such as influencers. Entries must be available to the storefront."
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    }
+  ],
+  "presets": [{ "name": "Metaobject entries grid" }],
+  "tag": null,
+  "class": "metaobject-entries-grid-block"
+}
+{% endschema %}
